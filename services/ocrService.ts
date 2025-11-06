@@ -1,7 +1,10 @@
 import Tesseract, { PSM } from 'tesseract.js';
-// FIX: Changed import statement for Jimp to resolve module interoperability issues.
-import Jimp = require('jimp');
+// FIX: Using a namespace import for 'jimp' to handle potential module resolution issues with its default export.
+import * as jimp from 'jimp';
 import { Buffer } from 'buffer';
+
+// FIX: Manually access the default export from the namespace. This is a common workaround for bundler/TypeScript interop issues with some ESM packages.
+const Jimp = (jimp as any).default || jimp;
 
 // Helper to get a Buffer from either a File object or a base64 string
 const getImageBuffer = async (image: string | File): Promise<Buffer> => {
@@ -18,6 +21,7 @@ const getImageBuffer = async (image: string | File): Promise<Buffer> => {
 // Pre-process the image for better OCR results
 const preprocessImage = async (image: string | File): Promise<Buffer> => {
     const imageBuffer = await getImageBuffer(image);
+    // FIX: The `Jimp.read` method is now correctly accessed from the resolved Jimp object.
     const jimpImage = await Jimp.read(imageBuffer);
     
     // Convert to greyscale, increase contrast, and normalize for clarity
@@ -26,6 +30,7 @@ const preprocessImage = async (image: string | File): Promise<Buffer> => {
         .contrast(0.4)
         .normalize();
 
+    // FIX: The `Jimp.MIME_PNG` property is now correctly accessed from the resolved Jimp object.
     return jimpImage.getBufferAsync(Jimp.MIME_PNG);
 };
 

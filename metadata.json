@@ -1,0 +1,7 @@
+{
+  "name": "7K SnapNotes",
+  "description": "A fast, offline-first PWA that lets users capture text from images, store notes locally, and generate flashcards to study. Everything works offline and is designed to be lightweight and performant.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

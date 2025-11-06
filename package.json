@@ -17,9 +17,7 @@
     "react-webcam": "7.2.0",
     "dexie-react-hooks": "1.1.7",
     "dexie": "4.0.7",
-    "tesseract.js": "5.1.0",
-    "jimp": "0.22.12",
-    "buffer": "6.0.3"
+    "tesseract.js": "5.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

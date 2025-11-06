@@ -1,37 +1,73 @@
 import Tesseract, { PSM } from 'tesseract.js';
-// FIX: Using a namespace import for 'jimp' to handle potential module resolution issues with its default export.
-import * as jimp from 'jimp';
-import { Buffer } from 'buffer';
 
-// FIX: Manually access the default export from the namespace. This is a common workaround for bundler/TypeScript interop issues with some ESM packages.
-const Jimp = (jimp as any).default || jimp;
+// Helper function to read a File/Blob and convert it to a Data URL
+const readImageAsDataURL = (imageFile: File | Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(imageFile);
+    });
+};
 
-// Helper to get a Buffer from either a File object or a base64 string
-const getImageBuffer = async (image: string | File): Promise<Buffer> => {
-    if (typeof image === 'string') {
-        // Handle base64 string from webcam
-        const base64Data = image.split(',')[1];
-        return Buffer.from(base64Data, 'base64');
-    }
-    // Handle File object from upload
-    const arrayBuffer = await image.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-}
+// Pre-process the image for better OCR results using the browser's native Canvas API
+const preprocessImage = async (image: string | File): Promise<Blob> => {
+    const imageUrl = typeof image === 'string' ? image : await readImageAsDataURL(image);
 
-// Pre-process the image for better OCR results
-const preprocessImage = async (image: string | File): Promise<Buffer> => {
-    const imageBuffer = await getImageBuffer(image);
-    // FIX: The `Jimp.read` method is now correctly accessed from the resolved Jimp object.
-    const jimpImage = await Jimp.read(imageBuffer);
-    
-    // Convert to greyscale, increase contrast, and normalize for clarity
-    jimpImage
-        .greyscale()
-        .contrast(0.4)
-        .normalize();
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        // Allow loading images from other origins for processing
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
 
-    // FIX: The `Jimp.MIME_PNG` property is now correctly accessed from the resolved Jimp object.
-    return jimpImage.getBufferAsync(Jimp.MIME_PNG);
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            // Get pixel data from the canvas
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Define the contrast adjustment level (from -100 to 100)
+            const contrast = 40; 
+            const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+            // Iterate over each pixel and apply filters
+            for (let i = 0; i < data.length; i += 4) {
+                // 1. Convert to greyscale
+                const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                
+                // 2. Apply contrast
+                const r = factor * (avg - 128) + 128;
+                const g = factor * (avg - 128) + 128;
+                const b = factor * (avg - 128) + 128;
+                
+                // Set the new pixel values, clamped between 0 and 255
+                data[i] = Math.max(0, Math.min(255, r));     // Red
+                data[i + 1] = Math.max(0, Math.min(255, g)); // Green
+                data[i + 2] = Math.max(0, Math.min(255, b)); // Blue
+            }
+            
+            // Put the modified pixel data back onto the canvas
+            ctx.putImageData(imageData, 0, 0);
+
+            // Export the canvas as a high-quality PNG blob
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Canvas to Blob conversion failed'));
+                }
+            }, 'image/png');
+        };
+        img.onerror = (error) => reject(new Error(`Image could not be loaded: ${error}`));
+        img.src = imageUrl;
+    });
 };
 
 
@@ -43,9 +79,9 @@ export const recognizeText = async (
 ): Promise<string> => {
   onProgress(0);
 
-  let processedImageBuffer: Buffer;
+  let processedImageBlob: Blob;
   try {
-    processedImageBuffer = await preprocessImage(image);
+    processedImageBlob = await preprocessImage(image);
     onProgress(10); // Allocate first 10% to preprocessing
   } catch (error) {
     console.error('Image preprocessing failed:', error);
@@ -91,12 +127,11 @@ export const recognizeText = async (
 
   try {
     // Set Page Segmentation Mode to Auto with Orientation/Script Detection for better accuracy
-    // FIX: Use the PSM enum from tesseract.js for type safety instead of a string literal.
     await worker.setParameters({
       tessedit_pageseg_mode: PSM.AUTO_OSD,
     });
     
-    const { data: { text } } = await worker.recognize(processedImageBuffer);
+    const { data: { text } } = await worker.recognize(processedImageBlob);
     
     onProgress(100);
     return text;

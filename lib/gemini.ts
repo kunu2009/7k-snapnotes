@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "https://aistudiocdn.com/google-genai@^0.19.1";
+import { GoogleGenAI } from "@google/genai";
 
 // FIX: Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
 const apiKey = process.env.API_KEY;

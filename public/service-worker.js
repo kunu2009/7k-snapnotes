@@ -2,7 +2,7 @@ const CACHE_NAME = '7k-snapnotes-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  'manifest.json'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {

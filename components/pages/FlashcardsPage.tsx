@@ -51,19 +51,21 @@ const FlashcardsPage: React.FC = () => {
     }),
     exitRemembered: {
         zIndex: 2,
-        y: -300,
+        x: 300,
+        y: -500,
         opacity: 0,
-        scale: 0.8,
-        rotate: 15,
-        transition: { duration: 0.4, ease: "easeInOut" }
+        scale: 0.7,
+        rotate: 45,
+        transition: { duration: 0.5, ease: "circOut" }
     },
     exitForgot: {
         zIndex: 2,
-        y: 300,
+        x: -300,
+        y: 200,
         opacity: 0,
-        scale: 0.8,
-        rotate: -15,
-        transition: { duration: 0.4, ease: "easeInOut" }
+        scale: 0.7,
+        rotate: -45,
+        transition: { duration: 0.5, ease: "circOut" }
     },
   };
 
@@ -76,6 +78,8 @@ const FlashcardsPage: React.FC = () => {
       console.log(`Card ${activeCard?.id} marked as '${status}'`);
       setExitVariant(status === 'remembered' ? 'exitRemembered' : 'exitForgot');
       paginate(1); // Advance to the next card
+      // After the animation starts, reset the exit variant for the next card's potential swipe exit
+      setTimeout(() => setExitVariant('exit'), 500); 
   };
 
   if (!flashcards) return <div>Loading...</div>;
@@ -118,7 +122,7 @@ const FlashcardsPage: React.FC = () => {
                         variants={flipVariants}
                         animate={isFlipped ? 'back' : 'front'}
                         transition={{ duration: 0.6 }}
-                        whileTap={{ scale: 0.97 }}
+                        whileTap={{ scale: 0.97, transition: { type: "spring", stiffness: 400, damping: 17 } }}
                         onClick={() => setIsFlipped(!isFlipped)}
                     >
                         {/* Front of card */}

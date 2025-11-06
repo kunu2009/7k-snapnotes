@@ -1,5 +1,5 @@
-// Fix: Dexie is imported as a default export in modern versions of the library.
-import Dexie, { type Table } from 'dexie';
+// Fix: Use named import for Dexie to ensure proper type resolution.
+import { Dexie, type Table } from 'dexie';
 import type { INote, IFlashcard } from '../types';
 
 export class SnapNotesDB extends Dexie {

@@ -13,6 +13,7 @@ const FlashcardsPage: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [exitVariant, setExitVariant] = useState('exit');
 
   const activeCard = useMemo(() => flashcards?.[currentIndex], [flashcards, currentIndex]);
 
@@ -37,15 +38,35 @@ const FlashcardsPage: React.FC = () => {
       zIndex: 1,
       x: 0,
       opacity: 1,
+      y: 0,
+      scale: 1,
+      rotate: 0,
+      transition: { duration: 0.3 }
     },
     exit: (direction: number) => ({
       zIndex: 0,
       x: direction < 0 ? 1000 : -1000,
       opacity: 0,
+      transition: { duration: 0.2 }
     }),
+    exitRemembered: {
+        zIndex: 2,
+        y: -300,
+        opacity: 0,
+        scale: 0.8,
+        rotate: 15,
+        transition: { duration: 0.4, ease: "easeInOut" }
+    },
+    exitForgot: {
+        zIndex: 2,
+        y: 300,
+        opacity: 0,
+        scale: 0.8,
+        rotate: -15,
+        transition: { duration: 0.4, ease: "easeInOut" }
+    },
   };
 
-  // FIX: Refactored flip animation to use variants to avoid potential issues with direct animate prop typing.
   const flipVariants = {
     front: { rotateY: 0 },
     back: { rotateY: 180 },
@@ -53,6 +74,7 @@ const FlashcardsPage: React.FC = () => {
 
   const handlePerformance = (status: 'remembered' | 'forgot') => {
       console.log(`Card ${activeCard?.id} marked as '${status}'`);
+      setExitVariant(status === 'remembered' ? 'exitRemembered' : 'exitForgot');
       paginate(1); // Advance to the next card
   };
 
@@ -69,7 +91,7 @@ const FlashcardsPage: React.FC = () => {
                     variants={cardVariants}
                     initial="enter"
                     animate="center"
-                    exit="exit"
+                    exit={exitVariant}
                     transition={{
                         x: { type: "spring", stiffness: 300, damping: 30 },
                         opacity: { duration: 0.2 },
@@ -77,12 +99,13 @@ const FlashcardsPage: React.FC = () => {
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={1}
-                    // FIX: Changed onDragEnd handler to avoid destructuring in arguments, which can cause issues with some TypeScript versions.
                     onDragEnd={(e, info) => {
                         const swipe = Math.abs(info.offset.x) * info.velocity.x;
                         if (swipe < -10000) {
+                            setExitVariant('exit');
                             paginate(1);
                         } else if (swipe > 10000) {
+                            setExitVariant('exit');
                             paginate(-1);
                         }
                     }}
@@ -95,6 +118,7 @@ const FlashcardsPage: React.FC = () => {
                         variants={flipVariants}
                         animate={isFlipped ? 'back' : 'front'}
                         transition={{ duration: 0.6 }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => setIsFlipped(!isFlipped)}
                     >
                         {/* Front of card */}

@@ -1,6 +1,6 @@
 // FIX: The import path is updated to the full CDN URL to resolve the Vercel build error.
 // The build tool (Vite/Rollup) cannot resolve "@google/genai" as it doesn't read the browser's importmap.
-import { GoogleGenAI } from "https://aistudiocdn.com/google-genai@0.19.1";
+import { GoogleGenAI } from "https://aistudiocdn.com/google-genai@0.25.0";
 
 // FIX: Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
 const apiKey = process.env.API_KEY;

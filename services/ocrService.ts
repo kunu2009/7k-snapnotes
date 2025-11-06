@@ -1,4 +1,33 @@
-import Tesseract from 'tesseract.js';
+import Tesseract, { PSM } from 'tesseract.js';
+import Jimp from 'jimp';
+import { Buffer } from 'buffer';
+
+// Helper to get a Buffer from either a File object or a base64 string
+const getImageBuffer = async (image: string | File): Promise<Buffer> => {
+    if (typeof image === 'string') {
+        // Handle base64 string from webcam
+        const base64Data = image.split(',')[1];
+        return Buffer.from(base64Data, 'base64');
+    }
+    // Handle File object from upload
+    const arrayBuffer = await image.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+}
+
+// Pre-process the image for better OCR results
+const preprocessImage = async (image: string | File): Promise<Buffer> => {
+    const imageBuffer = await getImageBuffer(image);
+    const jimpImage = await Jimp.read(imageBuffer);
+    
+    // Convert to greyscale, increase contrast, and normalize for clarity
+    jimpImage
+        .greyscale()
+        .contrast(0.4)
+        .normalize();
+
+    return jimpImage.getBufferAsync(Jimp.MIME_PNG);
+};
+
 
 export const recognizeText = async (
   image: string | File,
@@ -8,7 +37,16 @@ export const recognizeText = async (
 ): Promise<string> => {
   onProgress(0);
 
-  // Allow switching between the fast models and the higher-accuracy (but larger) models.
+  let processedImageBuffer: Buffer;
+  try {
+    processedImageBuffer = await preprocessImage(image);
+    onProgress(10); // Allocate first 10% to preprocessing
+  } catch (error) {
+    console.error('Image preprocessing failed:', error);
+    onProgress(0);
+    return 'Error: Could not preprocess image.';
+  }
+
   const langPath = highAccuracy 
     ? 'https://tessdata.projectnaptha.com/4.0.0' 
     : 'https://tessdata.projectnaptha.com/4.0.0_fast';
@@ -16,44 +54,49 @@ export const recognizeText = async (
   const worker = await Tesseract.createWorker(language, undefined, {
     langPath,
     logger: m => {
-      let progress = 0;
+      let baseProgress = 0;
       switch (m.status) {
         case 'loading tesseract core':
-          progress = 5;
+          baseProgress = 5;
           break;
         case 'initialized tesseract':
-          progress = 10;
+          baseProgress = 10;
           break;
         case 'loading language traineddata':
-          // Scale download progress to 15-45% range
-          progress = 15 + (m.progress || 0) * 30;
+          baseProgress = 15 + (m.progress || 0) * 30;
           break;
         case 'loaded language traineddata':
-          progress = 45;
+          baseProgress = 45;
           break;
         case 'initializing api':
-          progress = 50;
+          baseProgress = 50;
           break;
         case 'recognizing text':
-          // Scale recognition progress to 50-95% range
-          progress = 50 + (m.progress || 0) * 45;
+          baseProgress = 50 + (m.progress || 0) * 45;
           break;
       }
-      // Only update progress if it's meaningful and not complete yet
-      if (progress > 0 && progress < 100) {
-        onProgress(Math.round(progress));
+      // Scale worker progress to fit within the 10-100% range
+      const totalProgress = 10 + (baseProgress / 100) * 90;
+      if (totalProgress < 100) {
+        onProgress(Math.round(totalProgress));
       }
     },
   });
 
   try {
-    const { data: { text } } = await worker.recognize(image);
+    // Set Page Segmentation Mode to Auto with Orientation/Script Detection for better accuracy
+    // FIX: Use the PSM enum from tesseract.js for type safety instead of a string literal.
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.AUTO_OSD,
+    });
     
-    onProgress(100); // Signal completion
+    const { data: { text } } = await worker.recognize(processedImageBuffer);
+    
+    onProgress(100);
     return text;
   } catch (error) {
     console.error('OCR Error:', error);
-    onProgress(0); // Reset on error
+    onProgress(0);
     return 'Error during text recognition.';
   } finally {
     await worker.terminate();

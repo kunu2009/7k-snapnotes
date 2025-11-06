@@ -64,9 +64,9 @@ const NoteCard: React.FC<NoteCardProps> = ({ note }) => {
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
       onContextMenu={handleContextMenu}
-      className={`block p-4 bg-gray-800 rounded-lg shadow-lg hover:shadow-brand-purple/40 transform hover:-translate-y-1 transition-all duration-300 ${isPressing ? 'scale-95 shadow-brand-purple/60 -translate-y-0' : ''}`}
+      className={`block p-4 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg hover:shadow-brand-purple/40 transform hover:-translate-y-1 transition-all duration-300 ${isPressing ? 'scale-95 shadow-brand-purple/60 -translate-y-0' : ''}`}
     >
-      <h2 className="text-xl font-bold truncate text-brand-light">{note.title}</h2>
+      <h2 className="text-xl font-bold truncate text-brand-light dark:text-white">{note.title}</h2>
       <p className="text-gray-400 mt-2 h-24 overflow-hidden text-ellipsis">{note.content}</p>
       {note.createdAt && (
         <p className="text-xs text-gray-500 mt-4">{new Date(note.createdAt).toLocaleDateString()}</p>

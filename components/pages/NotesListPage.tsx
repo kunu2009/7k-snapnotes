@@ -28,7 +28,7 @@ const NotesListPage: React.FC = () => {
         placeholder="Search notes..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full p-3 mb-6 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-purple focus:outline-none"
+        className="w-full p-3 mb-6 bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-brand-purple focus:outline-none"
       />
       
       {notes && notes.length > 0 ? (

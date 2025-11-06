@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../../services/db';
 import { recognizeText } from '../../services/ocrService';
 import { UploadIcon, CopyIcon, CheckIcon } from '../icons/Icons';
+import ThemeToggleButton from '../ThemeToggleButton';
 
 // Expanded language options using the fast models
 const ocrLanguages = [
@@ -115,19 +116,22 @@ const ScanPage: React.FC = () => {
   };
 
   const renderIdle = () => (
-    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+    <div className="flex flex-col items-center justify-center h-full p-8 text-center relative">
+        <div className="absolute top-4 right-4">
+            <ThemeToggleButton />
+        </div>
         <h1 className="text-4xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-brand-teal to-brand-purple mb-4">7K SnapNotes</h1>
-        <p className="text-brand-light/80 mb-6">Capture text from anywhere.</p>
+        <p className="text-brand-light/80 dark:text-white/80 mb-6">Capture text from anywhere.</p>
 
         {/* Language Selection Dropdown */}
         <div className="w-full max-w-sm mb-4">
-            <label htmlFor="lang-select" className="block text-sm font-medium text-brand-light/70 mb-2 text-left">Recognition Language</label>
+            <label htmlFor="lang-select" className="block text-sm font-medium text-brand-light/70 dark:text-white/70 mb-2 text-left">Recognition Language</label>
             <div className="relative">
               <select
                   id="lang-select"
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-purple focus:outline-none appearance-none pr-10"
+                  className="w-full p-3 bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-brand-purple focus:outline-none appearance-none pr-10"
               >
                   {ocrLanguages.map(lang => (
                       <option key={lang.code} value={lang.code}>{lang.name}</option>
@@ -142,11 +146,11 @@ const ScanPage: React.FC = () => {
         {/* High Accuracy Toggle */}
         <div className="w-full max-w-sm mb-6">
             <div className="flex items-center justify-between">
-                <label htmlFor="accuracy-toggle" className="block text-sm font-medium text-brand-light/70">High Accuracy Mode</label>
+                <label htmlFor="accuracy-toggle" className="block text-sm font-medium text-brand-light/70 dark:text-white/70">High Accuracy Mode</label>
                 <button
                     id="accuracy-toggle"
                     onClick={() => setIsHighAccuracy(!isHighAccuracy)}
-                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-purple ${isHighAccuracy ? 'bg-brand-purple' : 'bg-gray-600'}`}
+                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-black focus:ring-brand-purple ${isHighAccuracy ? 'bg-brand-purple' : 'bg-gray-600'}`}
                 >
                     <span
                         className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${isHighAccuracy ? 'translate-x-6' : 'translate-x-1'}`}
@@ -166,7 +170,7 @@ const ScanPage: React.FC = () => {
             </button>
             <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full bg-gray-700 hover:bg-gray-600 text-brand-light font-bold py-4 px-4 rounded-xl transition-colors duration-300 flex items-center justify-center gap-3"
+                className="w-full bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 text-brand-light font-bold py-4 px-4 rounded-xl transition-colors duration-300 flex items-center justify-center gap-3"
             >
                 <UploadIcon className="w-6 h-6" />
                 Upload Image
@@ -203,13 +207,13 @@ const ScanPage: React.FC = () => {
             <textarea
                 value={ocrResult ?? ''}
                 onChange={(e) => setOcrResult(e.target.value)}
-                className="w-full h-64 p-2 border border-gray-600 bg-gray-800 rounded-md text-brand-light"
+                className="w-full h-64 p-2 border border-gray-600 bg-gray-800 dark:bg-gray-900 rounded-md text-brand-light dark:text-white"
                 placeholder="Recognized text will appear here..."
             />
             {!isProcessing && ocrResult && (
                 <button
                     onClick={handleCopyToClipboard}
-                    className="absolute top-3 right-3 p-2 bg-gray-700/80 backdrop-blur-sm rounded-full hover:bg-gray-600/80 transition-all duration-200 text-brand-light"
+                    className="absolute top-3 right-3 p-2 bg-gray-700/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-600/80 dark:hover:bg-gray-700/80 transition-all duration-200 text-brand-light dark:text-white"
                     aria-label={isCopied ? "Copied" : "Copy text"}
                     title={isCopied ? "Copied" : "Copy text"}
                 >
@@ -217,7 +221,7 @@ const ScanPage: React.FC = () => {
                 </button>
             )}
             {isProcessing && (
-                <div className="absolute inset-0 bg-gray-900/80 flex flex-col items-center justify-center rounded-md">
+                <div className="absolute inset-0 bg-gray-900/80 dark:bg-black/80 flex flex-col items-center justify-center rounded-md">
                     <div className="w-24 h-24">
                         <svg className="w-full h-full" viewBox="0 0 100 100">
                             <circle className="text-gray-700" strokeWidth="10" stroke="currentColor" fill="transparent" r="35" cx="50" cy="50" />
@@ -241,7 +245,7 @@ const ScanPage: React.FC = () => {
             )}
         </div>
         <div className="flex gap-4">
-            <button onClick={resetState} className="w-full bg-gray-700 hover:bg-gray-600 text-brand-light font-bold py-3 px-4 rounded-xl transition-colors">
+            <button onClick={resetState} className="w-full bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 text-brand-light font-bold py-3 px-4 rounded-xl transition-colors">
                 Scan New
             </button>
             <button

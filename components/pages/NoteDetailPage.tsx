@@ -101,7 +101,7 @@ const NoteDetailPage: React.FC = () => {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="w-full h-96 p-2 bg-gray-800 border border-gray-700 rounded-md text-brand-light focus:ring-2 focus:ring-brand-purple focus:outline-none"
+        className="w-full h-96 p-2 bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-800 rounded-md text-brand-light dark:text-white focus:ring-2 focus:ring-brand-purple focus:outline-none"
       />
       <div className="grid grid-cols-2 gap-4">
         <button onClick={handleSave} className="bg-brand-teal text-white font-bold py-3 px-4 rounded-xl">

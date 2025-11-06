@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Add `Variants` type import to correctly type the framer-motion variants object.
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 const FlashcardsPage: React.FC = () => {
   const { noteId } = useParams<{ noteId: string }>();
@@ -29,7 +30,8 @@ const FlashcardsPage: React.FC = () => {
     });
   };
 
-  const cardVariants = {
+  // FIX: Explicitly type `cardVariants` with `Variants` to resolve type inference issue with the `ease` property.
+  const cardVariants: Variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 1000 : -1000,
       opacity: 0,

@@ -3,14 +3,18 @@ import Tesseract from 'tesseract.js';
 export const recognizeText = async (
   image: string | File,
   onProgress: (progress: number) => void,
-  language: string
+  language: string,
+  highAccuracy: boolean
 ): Promise<string> => {
   onProgress(0);
 
-  // Use the smaller, faster language models for a much better mobile experience.
-  // These models are typically < 1MB vs the 10-40MB of the standard models.
+  // Allow switching between the fast models and the higher-accuracy (but larger) models.
+  const langPath = highAccuracy 
+    ? 'https://tessdata.projectnaptha.com/4.0.0' 
+    : 'https://tessdata.projectnaptha.com/4.0.0_fast';
+
   const worker = await Tesseract.createWorker(language, undefined, {
-    langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
+    langPath,
     logger: m => {
       let progress = 0;
       switch (m.status) {

@@ -4,7 +4,7 @@ import Webcam from 'react-webcam';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../services/db';
 import { recognizeText } from '../../services/ocrService';
-import { UploadIcon } from '../icons/Icons';
+import { UploadIcon, CopyIcon, CheckIcon } from '../icons/Icons';
 
 // Expanded language options using the fast models
 const ocrLanguages = [
@@ -32,6 +32,8 @@ const ScanPage: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [mode, setMode] = useState<'idle' | 'camera' | 'result'>('idle');
   const [selectedLang, setSelectedLang] = useState('eng'); // State for selected language
+  const [isHighAccuracy, setIsHighAccuracy] = useState(false); // State for accuracy mode
+  const [isCopied, setIsCopied] = useState(false);
   // FIX: Replaced useHistory with useNavigate.
   const navigate = useNavigate();
   const webcamRef = useRef<Webcam>(null);
@@ -47,8 +49,8 @@ const ScanPage: React.FC = () => {
     }
 
     try {
-      // Pass selected language to the OCR service
-      const text = await recognizeText(imgSrc, setProgress, selectedLang);
+      // Pass selected language and accuracy mode to the OCR service
+      const text = await recognizeText(imgSrc, setProgress, selectedLang, isHighAccuracy);
       setOcrResult(text);
     } catch (error) {
       console.error(error);
@@ -75,7 +77,7 @@ const ScanPage: React.FC = () => {
     if (image) {
       handleImage(image);
     }
-  }, [webcamRef, selectedLang]);
+  }, [webcamRef, selectedLang, isHighAccuracy]);
 
   const saveNote = async () => {
     if (!ocrResult) return;
@@ -101,13 +103,24 @@ const ScanPage: React.FC = () => {
     setMode('idle');
   };
 
+  const handleCopyToClipboard = () => {
+    if (!ocrResult) return;
+    navigator.clipboard.writeText(ocrResult).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+    }).catch(err => {
+      console.error('Could not copy text: ', err);
+      alert('Failed to copy text to clipboard.');
+    });
+  };
+
   const renderIdle = () => (
     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
         <h1 className="text-4xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-brand-teal to-brand-purple mb-4">7K SnapNotes</h1>
         <p className="text-brand-light/80 mb-6">Capture text from anywhere.</p>
 
         {/* Language Selection Dropdown */}
-        <div className="w-full max-w-sm mb-6">
+        <div className="w-full max-w-sm mb-4">
             <label htmlFor="lang-select" className="block text-sm font-medium text-brand-light/70 mb-2 text-left">Recognition Language</label>
             <div className="relative">
               <select
@@ -125,6 +138,24 @@ const ScanPage: React.FC = () => {
               </div>
             </div>
         </div>
+        
+        {/* High Accuracy Toggle */}
+        <div className="w-full max-w-sm mb-6">
+            <div className="flex items-center justify-between">
+                <label htmlFor="accuracy-toggle" className="block text-sm font-medium text-brand-light/70">High Accuracy Mode</label>
+                <button
+                    id="accuracy-toggle"
+                    onClick={() => setIsHighAccuracy(!isHighAccuracy)}
+                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-purple ${isHighAccuracy ? 'bg-brand-purple' : 'bg-gray-600'}`}
+                >
+                    <span
+                        className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${isHighAccuracy ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 text-left">Slower, larger download, but better for complex documents.</p>
+        </div>
+
 
         <div className="w-full max-w-sm space-y-4">
             <button
@@ -175,6 +206,16 @@ const ScanPage: React.FC = () => {
                 className="w-full h-64 p-2 border border-gray-600 bg-gray-800 rounded-md text-brand-light"
                 placeholder="Recognized text will appear here..."
             />
+            {!isProcessing && ocrResult && (
+                <button
+                    onClick={handleCopyToClipboard}
+                    className="absolute top-3 right-3 p-2 bg-gray-700/80 backdrop-blur-sm rounded-full hover:bg-gray-600/80 transition-all duration-200 text-brand-light"
+                    aria-label={isCopied ? "Copied" : "Copy text"}
+                    title={isCopied ? "Copied" : "Copy text"}
+                >
+                    {isCopied ? <CheckIcon className="w-5 h-5 text-green-400" /> : <CopyIcon className="w-5 h-5" />}
+                </button>
+            )}
             {isProcessing && (
                 <div className="absolute inset-0 bg-gray-900/80 flex flex-col items-center justify-center rounded-md">
                     <div className="w-24 h-24">

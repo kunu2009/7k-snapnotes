@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
+// FIX: Replaced useHistory with useNavigate for react-router-dom v6 compatibility.
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../services/db';
 import { recognizeText } from '../../services/ocrService';
@@ -11,6 +12,7 @@ const ScanPage: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [mode, setMode] = useState<'idle' | 'camera' | 'result'>('idle');
+  // FIX: Replaced useHistory with useNavigate.
   const navigate = useNavigate();
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,7 @@ const ScanPage: React.FC = () => {
         content: ocrResult,
         createdAt: new Date(),
       });
+      // FIX: Used navigate for navigation in v6.
       navigate(`/notes/${id}`);
     } catch (error) {
       console.error('Failed to save note: ', error);

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+// FIX: Replaced useHistory with useNavigate for react-router-dom v6 compatibility.
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import type { INote } from '../../types';
 import { generateFlashcardsFromText } from '../../lib/textUtils';
+import { summarizeText, isGeminiConfigured } from '../../lib/gemini';
 
 const NoteDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  // FIX: Replaced useHistory with useNavigate.
   const navigate = useNavigate();
   const noteId = Number(id);
 
@@ -15,6 +18,8 @@ const NoteDetailPage: React.FC = () => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const showAiFeatures = isGeminiConfigured();
 
   useEffect(() => {
     if (note) {
@@ -35,6 +40,7 @@ const NoteDetailPage: React.FC = () => {
       await db.notes.delete(noteId);
       // also delete associated flashcards
       await db.flashcards.where('noteId').equals(noteId).delete();
+      // FIX: Used navigate for navigation in v6.
       navigate('/notes');
     }
   };
@@ -52,6 +58,7 @@ const NoteDetailPage: React.FC = () => {
           cardsToGenerate.map(card => ({ ...card, createdAt: new Date() }))
         );
         alert(`${cardsToGenerate.length} flashcards generated!`);
+        // FIX: Used navigate for navigation in v6.
         navigate(`/flashcards/${noteId}`);
       } else {
         alert('Could not generate any flashcards from this note.');
@@ -62,6 +69,21 @@ const NoteDetailPage: React.FC = () => {
     } finally {
         setIsGenerating(false);
     }
+  };
+  
+  const handleSummarize = async () => {
+      if (!content) return;
+      setIsSummarizing(true);
+      try {
+          const summary = await summarizeText(content);
+          const newContent = `✨ AI Summary:\n${summary}\n\n---\n\n${content}`;
+          setContent(newContent);
+      } catch (error) {
+          console.error(error);
+          alert('Failed to generate summary.');
+      } finally {
+          setIsSummarizing(false);
+      }
   };
 
   if (!note) {
@@ -89,13 +111,24 @@ const NoteDetailPage: React.FC = () => {
           Delete Note
         </button>
       </div>
-      <button
-        onClick={handleGenerateFlashcards}
-        disabled={isGenerating}
-        className="w-full text-white font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-brand-teal to-brand-purple disabled:opacity-50 hover:opacity-90 transition-opacity"
-      >
-        {isGenerating ? 'Generating...' : 'Generate Flashcards'}
-      </button>
+      <div className="space-y-4">
+        <button
+          onClick={handleGenerateFlashcards}
+          disabled={isGenerating || isSummarizing}
+          className="w-full text-white font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-brand-teal to-brand-purple disabled:opacity-50 hover:opacity-90 transition-opacity"
+        >
+          {isGenerating ? 'Generating...' : 'Generate Flashcards'}
+        </button>
+        {showAiFeatures && (
+            <button
+                onClick={handleSummarize}
+                disabled={isSummarizing || isGenerating}
+                className="w-full text-white font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-brand-purple to-purple-700 disabled:opacity-50 hover:opacity-90 transition-opacity"
+            >
+                {isSummarizing ? 'Summarizing...' : 'Summarize with AI'}
+            </button>
+        )}
+      </div>
     </div>
   );
 };

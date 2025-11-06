@@ -20,8 +20,8 @@ const FlashcardsPage: React.FC = () => {
     setIsFlipped(false); // un-flip card on navigation
     setDirection(newDirection);
     setCurrentIndex(prevIndex => {
-        const newIndex = prevIndex + newDirection;
         if (!flashcards) return 0;
+        const newIndex = prevIndex + newDirection;
         if (newIndex < 0) return flashcards.length - 1;
         if (newIndex >= flashcards.length) return 0;
         return newIndex;
@@ -45,6 +45,17 @@ const FlashcardsPage: React.FC = () => {
     }),
   };
 
+  // FIX: Refactored flip animation to use variants to avoid potential issues with direct animate prop typing.
+  const flipVariants = {
+    front: { rotateY: 0 },
+    back: { rotateY: 180 },
+  };
+
+  const handlePerformance = (status: 'remembered' | 'forgot') => {
+      console.log(`Card ${activeCard?.id} marked as '${status}'`);
+      paginate(1); // Advance to the next card
+  };
+
   if (!flashcards) return <div>Loading...</div>;
   if (flashcards.length === 0) return <div className="p-4 text-center">No flashcards in this deck.</div>;
 
@@ -66,8 +77,9 @@ const FlashcardsPage: React.FC = () => {
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={1}
-                    onDragEnd={(e, { offset, velocity }) => {
-                        const swipe = Math.abs(offset.x) * velocity.x;
+                    // FIX: Changed onDragEnd handler to avoid destructuring in arguments, which can cause issues with some TypeScript versions.
+                    onDragEnd={(e, info) => {
+                        const swipe = Math.abs(info.offset.x) * info.velocity.x;
                         if (swipe < -10000) {
                             paginate(1);
                         } else if (swipe > 10000) {
@@ -80,7 +92,8 @@ const FlashcardsPage: React.FC = () => {
                     <motion.div
                         className="relative w-full h-full"
                         style={{ transformStyle: 'preserve-3d' }}
-                        animate={{ rotateY: isFlipped ? 180 : 0 }}
+                        variants={flipVariants}
+                        animate={isFlipped ? 'back' : 'front'}
                         transition={{ duration: 0.6 }}
                         onClick={() => setIsFlipped(!isFlipped)}
                     >
@@ -101,16 +114,30 @@ const FlashcardsPage: React.FC = () => {
         {currentIndex + 1} / {flashcards.length}
       </div>
 
-      <div className="flex justify-between w-full max-w-xs">
-        <button onClick={() => paginate(-1)} className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <button onClick={() => setIsFlipped(!isFlipped)} className="font-bold py-3 px-6 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors">
-            Flip Card
-        </button>
-        <button onClick={() => paginate(1)} className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </button>
+      <div className="flex justify-center w-full max-w-md mt-4">
+        {!isFlipped ? (
+            <button 
+                onClick={() => setIsFlipped(true)} 
+                className="w-full font-bold py-4 px-6 rounded-xl bg-gray-700 hover:bg-gray-600 transition-colors"
+            >
+                Show Answer
+            </button>
+        ) : (
+            <div className="flex justify-between w-full gap-4">
+                <button 
+                    onClick={() => handlePerformance('forgot')} 
+                    className="w-full font-bold py-4 px-6 rounded-xl bg-red-800/80 hover:bg-red-700/80 transition-colors text-white"
+                >
+                    Forgot
+                </button>
+                <button 
+                    onClick={() => handlePerformance('remembered')} 
+                    className="w-full font-bold py-4 px-6 rounded-xl bg-brand-teal hover:opacity-90 transition-opacity text-white"
+                >
+                    Remembered
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );

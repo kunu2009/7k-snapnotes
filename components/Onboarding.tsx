@@ -79,6 +79,12 @@ const Onboarding: React.FC = () => {
             opacity: 0
         })
     };
+    
+    // FIX: Defined variants for the main container to resolve type issues with initial/animate/exit props.
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+    };
 
     if (!isVisible) {
         return null;
@@ -90,9 +96,10 @@ const Onboarding: React.FC = () => {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
                     className="fixed inset-0 bg-brand-dark/90 backdrop-blur-md z-[100] flex flex-col justify-center items-center p-4"
                 >
                     <div className="w-full max-w-sm h-[28rem] bg-gray-800 rounded-2xl shadow-2xl flex flex-col text-center overflow-hidden">

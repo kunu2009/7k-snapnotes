@@ -65,22 +65,34 @@ const Onboarding: React.FC = () => {
         }
     };
 
-    const variants = {
+    const contentVariants = {
         enter: (direction: number) => ({
             x: direction > 0 ? '100%' : '-100%',
-            opacity: 0
+            opacity: 0,
+            scale: 0.95,
         }),
         center: {
             x: 0,
-            opacity: 1
+            opacity: 1,
+            scale: 1,
         },
         exit: (direction: number) => ({
             x: direction < 0 ? '100%' : '-100%',
-            opacity: 0
+            opacity: 0,
+            scale: 0.95,
         })
     };
-    
-    // FIX: Defined variants for the main container to resolve type issues with initial/animate/exit props.
+
+    const buttonVariants = {
+        hidden: { opacity: 0, x: -10 },
+        visible: { opacity: 1, x: 0 },
+    };
+
+    const buttonTextVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 },
+    };
+
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: { opacity: 1 },
@@ -91,6 +103,7 @@ const Onboarding: React.FC = () => {
     }
 
     const currentStep = onboardingSteps[step];
+    const isLastStep = step === onboardingSteps.length - 1;
     
     return (
         <AnimatePresence>
@@ -108,11 +121,11 @@ const Onboarding: React.FC = () => {
                              <motion.div
                                 key={step}
                                 custom={direction}
-                                variants={variants}
+                                variants={contentVariants}
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
-                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                transition={{ type: 'spring', stiffness: 260, damping: 25 }}
                                 className="absolute w-full h-full flex flex-col items-center justify-center p-6 space-y-4"
                              >
                                 <div className="text-6xl mb-4">{currentStep.icon}</div>
@@ -132,20 +145,54 @@ const Onboarding: React.FC = () => {
                                 ))}
                             </div>
                             <div className="flex items-center justify-between">
-                                {step === 0 ? (
-                                    <button onClick={completeOnboarding} className="font-semibold text-gray-400 hover:text-white transition-colors">
-                                        Skip
-                                    </button>
-                                ) : (
-                                    <button onClick={handlePrev} className="font-semibold text-gray-400 hover:text-white transition-colors">
-                                        Back
-                                    </button>
-                                )}
+                                <div className="w-16 h-6 flex items-center justify-start">
+                                    <AnimatePresence mode="wait">
+                                        {step === 0 ? (
+                                            <motion.button
+                                                key="skip"
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="hidden"
+                                                variants={buttonVariants}
+                                                transition={{ duration: 0.2 }}
+                                                onClick={completeOnboarding}
+                                                className="font-semibold text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                Skip
+                                            </motion.button>
+                                        ) : (
+                                            <motion.button
+                                                key="back"
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="hidden"
+                                                variants={buttonVariants}
+                                                transition={{ duration: 0.2 }}
+                                                onClick={handlePrev}
+                                                className="font-semibold text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                Back
+                                            </motion.button>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                                 <button
                                     onClick={handleNext}
                                     className="px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-brand-teal to-brand-purple hover:opacity-90 transition-opacity"
                                 >
-                                    {step === onboardingSteps.length - 1 ? 'Get Started' : 'Next'}
+                                    <AnimatePresence mode="wait">
+                                        <motion.span
+                                            key={isLastStep ? 'get-started' : 'next'}
+                                            initial="hidden"
+                                            animate="visible"
+                                            exit="hidden"
+                                            variants={buttonTextVariants}
+                                            transition={{ duration: 0.2, delay: 0.1 }}
+                                            className="inline-block"
+                                        >
+                                            {isLastStep ? 'Get Started' : 'Next'}
+                                        </motion.span>
+                                    </AnimatePresence>
                                 </button>
                             </div>
                         </div>

@@ -1,5 +1,6 @@
 import Tesseract, { PSM } from 'tesseract.js';
-import Jimp from 'jimp';
+// FIX: Changed import statement for Jimp to resolve module interoperability issues.
+import Jimp = require('jimp');
 import { Buffer } from 'buffer';
 
 // Helper to get a Buffer from either a File object or a base64 string

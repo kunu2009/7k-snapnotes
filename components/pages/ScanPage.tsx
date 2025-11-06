@@ -31,7 +31,8 @@ const ScanPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [mode, setMode] = useState<'idle' | 'camera' | 'result'>('idle');
+  const [imageData, setImageData] = useState<string | File | null>(null);
+  const [mode, setMode] = useState<'idle' | 'camera' | 'confirm' | 'result'>('idle');
   const [selectedLang, setSelectedLang] = useState('eng'); // State for selected language
   const [isHighAccuracy, setIsHighAccuracy] = useState(false); // State for accuracy mode
   const [isCopied, setIsCopied] = useState(false);
@@ -40,18 +41,16 @@ const ScanPage: React.FC = () => {
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImage = async (imgSrc: string | File) => {
+  const startOcrProcessing = async () => {
+    if (!imageData) return;
+
     setIsProcessing(true);
     setOcrResult(null);
     setProgress(0);
     setMode('result');
-    if (typeof imgSrc === 'string') {
-        setImageSrc(imgSrc);
-    }
 
     try {
-      // Pass selected language and accuracy mode to the OCR service
-      const text = await recognizeText(imgSrc, setProgress, selectedLang, isHighAccuracy);
+      const text = await recognizeText(imageData, setProgress, selectedLang, isHighAccuracy);
       setOcrResult(text);
     } catch (error) {
       console.error(error);
@@ -61,13 +60,15 @@ const ScanPage: React.FC = () => {
     }
   };
 
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setImageData(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImageSrc(e.target?.result as string);
-        handleImage(file);
+        setMode('confirm');
       };
       reader.readAsDataURL(file);
     }
@@ -76,9 +77,11 @@ const ScanPage: React.FC = () => {
   const capture = useCallback(() => {
     const image = webcamRef.current?.getScreenshot();
     if (image) {
-      handleImage(image);
+      setImageData(image);
+      setImageSrc(image);
+      setMode('confirm');
     }
-  }, [webcamRef, selectedLang, isHighAccuracy]);
+  }, [webcamRef]);
 
   const saveNote = async () => {
     if (!ocrResult) return;
@@ -101,6 +104,7 @@ const ScanPage: React.FC = () => {
     setIsProcessing(false);
     setProgress(0);
     setImageSrc(null);
+    setImageData(null);
     setMode('idle');
   };
 
@@ -200,6 +204,26 @@ const ScanPage: React.FC = () => {
     </div>
   );
 
+  const renderConfirm = () => (
+    <div className="p-4 flex flex-col h-full">
+        <h2 className="text-2xl font-bold text-center mb-4 font-display">Confirm Image</h2>
+        <div className="flex-grow flex items-center justify-center mb-4 bg-black/20 rounded-lg overflow-hidden">
+            {imageSrc && <img src={imageSrc} alt="Preview" className="max-h-full max-w-full object-contain" />}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4">
+            <button onClick={resetState} className="w-full bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 text-brand-light font-bold py-3 px-4 rounded-xl transition-colors">
+                Cancel
+            </button>
+            <button
+                onClick={startOcrProcessing}
+                className="w-full text-white font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-brand-teal to-brand-purple hover:opacity-90 transition-opacity"
+            >
+                Confirm & Scan
+            </button>
+        </div>
+    </div>
+  );
+
   const renderResult = () => (
     <div className="p-4 space-y-4">
         {imageSrc && <img src={imageSrc} alt="Captured" className="rounded-lg max-h-60 w-full object-contain" />}
@@ -262,6 +286,8 @@ const ScanPage: React.FC = () => {
   switch (mode) {
     case 'camera':
       return renderCamera();
+    case 'confirm':
+      return renderConfirm();
     case 'result':
       return renderResult();
     default:

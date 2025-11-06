@@ -6,12 +6,32 @@ import { db } from '../../services/db';
 import { recognizeText } from '../../services/ocrService';
 import { UploadIcon } from '../icons/Icons';
 
+// Expanded language options using the fast models
+const ocrLanguages = [
+  { code: 'eng', name: 'English' },
+  { code: 'spa', name: 'Spanish' },
+  { code: 'fra', name: 'French' },
+  { code: 'deu', name: 'German' },
+  { code: 'chi_sim', name: 'Chinese (Simplified)' },
+  { code: 'jpn', name: 'Japanese' },
+  { code: 'kor', name: 'Korean' },
+  { code: 'rus', name: 'Russian' },
+  { code: 'ita', name: 'Italian' },
+  { code: 'por', name: 'Portuguese' },
+  { code: 'nld', name: 'Dutch' },
+  { code: 'pol', name: 'Polish' },
+  { code: 'swe', name: 'Swedish' },
+  { code: 'tur', name: 'Turkish' },
+];
+
+
 const ScanPage: React.FC = () => {
   const [ocrResult, setOcrResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [mode, setMode] = useState<'idle' | 'camera' | 'result'>('idle');
+  const [selectedLang, setSelectedLang] = useState('eng'); // State for selected language
   // FIX: Replaced useHistory with useNavigate.
   const navigate = useNavigate();
   const webcamRef = useRef<Webcam>(null);
@@ -27,7 +47,8 @@ const ScanPage: React.FC = () => {
     }
 
     try {
-      const text = await recognizeText(imgSrc, setProgress);
+      // Pass selected language to the OCR service
+      const text = await recognizeText(imgSrc, setProgress, selectedLang);
       setOcrResult(text);
     } catch (error) {
       console.error(error);
@@ -54,7 +75,7 @@ const ScanPage: React.FC = () => {
     if (image) {
       handleImage(image);
     }
-  }, [webcamRef]);
+  }, [webcamRef, selectedLang]);
 
   const saveNote = async () => {
     if (!ocrResult) return;
@@ -83,7 +104,28 @@ const ScanPage: React.FC = () => {
   const renderIdle = () => (
     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
         <h1 className="text-4xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-brand-teal to-brand-purple mb-4">7K SnapNotes</h1>
-        <p className="text-brand-light/80 mb-8">Capture text from anywhere.</p>
+        <p className="text-brand-light/80 mb-6">Capture text from anywhere.</p>
+
+        {/* Language Selection Dropdown */}
+        <div className="w-full max-w-sm mb-6">
+            <label htmlFor="lang-select" className="block text-sm font-medium text-brand-light/70 mb-2 text-left">Recognition Language</label>
+            <div className="relative">
+              <select
+                  id="lang-select"
+                  value={selectedLang}
+                  onChange={(e) => setSelectedLang(e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-purple focus:outline-none appearance-none pr-10"
+              >
+                  {ocrLanguages.map(lang => (
+                      <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              </div>
+            </div>
+        </div>
+
         <div className="w-full max-w-sm space-y-4">
             <button
                 onClick={() => setMode('camera')}

@@ -2,11 +2,15 @@ import Tesseract from 'tesseract.js';
 
 export const recognizeText = async (
   image: string | File,
-  onProgress: (progress: number) => void
+  onProgress: (progress: number) => void,
+  language: string
 ): Promise<string> => {
   onProgress(0);
 
-  const worker = await Tesseract.createWorker({
+  // Use the smaller, faster language models for a much better mobile experience.
+  // These models are typically < 1MB vs the 10-40MB of the standard models.
+  const worker = await Tesseract.createWorker(language, undefined, {
+    langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
     logger: m => {
       let progress = 0;
       switch (m.status) {
@@ -39,9 +43,6 @@ export const recognizeText = async (
   });
 
   try {
-    // These steps will trigger status updates in the logger.
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
     const { data: { text } } = await worker.recognize(image);
     
     onProgress(100); // Signal completion
@@ -51,7 +52,6 @@ export const recognizeText = async (
     onProgress(0); // Reset on error
     return 'Error during text recognition.';
   } finally {
-    // Terminate the worker to free up resources.
     await worker.terminate();
   }
 };
